@@ -66,7 +66,7 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
                 } else {
                   info.project.projectService.logger.info(`[Balar] Called inside context - checking for conditionals`);
                   // Inside balar.run(), check for conditional calls
-                  const conditionalParent = findConditionalParent(node, balarContext.node, balarIdentifiers);
+                  const conditionalParent = findConditionalParent(node, balarContext.node, balarIdentifiers, sourceFile!);
                   if (conditionalParent) {
                     info.project.projectService.logger.info(`[Balar] Found conditional call - reporting error`);
                     newDiagnostics.push({
@@ -272,7 +272,31 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
     }
 
     // Helper: Find if a call is inside a conditional (if/switch/ternary) but not inside balar.if/balar.switch
+    // This checks both direct conditionals AND conditionals through the call chain
     function findConditionalParent(
+      node: ts.Node,
+      balarContextNode: ts.Node,
+      balarIdentifiers: string[],
+      sourceFile: ts.SourceFile
+    ): ts.Node | null {
+      // First, check for direct conditionals in the current function
+      const directConditional = findDirectConditionalParent(node, balarContextNode, balarIdentifiers);
+      if (directConditional) {
+        return directConditional;
+      }
+
+      // Then, check if the containing function is called conditionally through the call chain
+      const containingFunction = findContainingFunction(node);
+      if (containingFunction && containingFunction !== balarContextNode) {
+        const visited = new Set<ts.Node>();
+        return isFunctionCalledConditionally(containingFunction, balarContextNode, balarIdentifiers, sourceFile, visited);
+      }
+
+      return null;
+    }
+
+    // Helper: Find direct conditional parents in the AST
+    function findDirectConditionalParent(
       node: ts.Node,
       balarContextNode: ts.Node,
       balarIdentifiers: string[]
@@ -325,6 +349,50 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
         }
 
         current = current.parent;
+      }
+
+      return null;
+    }
+
+    // Helper: Check if a function is called conditionally (through call chain)
+    function isFunctionCalledConditionally(
+      func: ts.Node,
+      balarContextNode: ts.Node,
+      balarIdentifiers: string[],
+      sourceFile: ts.SourceFile,
+      visited: Set<ts.Node>
+    ): ts.Node | null {
+      // Prevent infinite loops
+      if (visited.has(func)) {
+        return null;
+      }
+      visited.add(func);
+
+      // Get the function name
+      const functionName = getFunctionName(func);
+      if (!functionName) {
+        return null;
+      }
+
+      // Find all call sites of this function
+      const callSites = findCallSites(functionName, sourceFile);
+
+      // Check each call site
+      for (const callSite of callSites) {
+        // Check if this call site has a direct conditional parent
+        const directConditional = findDirectConditionalParent(callSite, balarContextNode, balarIdentifiers);
+        if (directConditional) {
+          return directConditional;
+        }
+
+        // Check if the function containing this call site is itself called conditionally
+        const callingFunction = findContainingFunction(callSite);
+        if (callingFunction && callingFunction !== balarContextNode) {
+          const conditionalInChain = isFunctionCalledConditionally(callingFunction, balarContextNode, balarIdentifiers, sourceFile, visited);
+          if (conditionalInChain) {
+            return conditionalInChain;
+          }
+        }
       }
 
       return null;
