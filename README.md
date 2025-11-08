@@ -1,52 +1,153 @@
-## A Template for a TypeScript Language Service Plugin
+# Balar TypeScript Language Server Plugin
 
-<img src="./docs/screenshot.png">
+A TypeScript Language Server plugin that detects incorrect usage of balar-wrapped bulk functions and provides real-time diagnostics in your IDE.
 
-This repo has two projects:
+## Features
 
-- `/` is a TSServer Plugin 
-- `/example` is a TypeScript project which uses the root TSServer Plugin
+This plugin enforces two key rules for using balar:
 
-The source files for your project
+1. **No balar-wrapped functions outside balar context**: Balar-wrapped functions (functions wrapped with `balar.wrap.fns()` or `balar.wrap.object()`) must be called inside a `balar.run()` context.
 
-#### Get Started
+2. **No conditional calls inside balar context**: Inside `balar.run()`, balar-wrapped functions must not be called conditionally (e.g., inside `if` statements, `switch` statements, ternary operators, or short-circuit operators like `&&` or `||`). Use `balar.if()` or `balar.switch()` instead.
 
-Get the plugin working and your TS to JS converted as you save:
+## Installation
 
-```ts
-git clone https://github.com/orta/TypeScript-TSServer-Plugin-Template
-cd TypeScript-TSServer-Plugin-Template
+1. Install the plugin in your project:
+   ```bash
+   npm install --save-dev tsserver-plugin
+   ```
 
-# Install deps and run TypeScript
-npm i
+2. Configure your `tsconfig.json` to use the plugin:
+   ```json
+   {
+     "compilerOptions": {
+       "plugins": [
+         {
+           "name": "tsserver-plugin"
+         }
+       ]
+     }
+   }
+   ```
+
+3. Restart your TypeScript language server (in VS Code: `CMD+Shift+P` → "TypeScript: Restart TS Server")
+
+## Examples
+
+### ❌ Error: Calling outside balar.run()
+
+```typescript
+import { balar } from 'balar';
+
+const wrap = balar.wrap.fns({
+  fetch: async (url: string[]) => {
+    return url.map((u) => u + " fetched");
+  },
+});
+
+// ERROR: Balar-wrapped function must be called inside a balar.run() context
+const fetch = wrap.fetch("https://google.com");
+```
+
+### ✅ Correct: Calling inside balar.run()
+
+```typescript
+const results = await balar.run(urls, async (url) => {
+  const data = await wrap.fetch(url);
+  return data;
+});
+```
+
+### ❌ Error: Conditional call inside balar.run()
+
+```typescript
+const results = await balar.run(urls, async (url) => {
+  let data;
+
+  // ERROR: Balar-wrapped function must not be called conditionally
+  if (url.includes("google")) {
+    data = await wrap.fetch(url);
+  }
+
+  return data;
+});
+```
+
+### ✅ Correct: Using balar.if()
+
+```typescript
+const results = await balar.run(urls, async (url) => {
+  const data = await balar.if(
+    url.includes("google"),
+    async () => await wrap.fetch(url),
+    async () => undefined
+  );
+
+  return data;
+});
+```
+
+## How It Works
+
+The plugin uses TypeScript's Language Service API to:
+
+1. **Detect balar imports**: Tracks all imports of `balar` from the 'balar' package (including aliased imports)
+
+2. **Identify BalarFn types**: Analyzes function call expressions and their types to determine if they are balar-wrapped functions by checking for the characteristic `BalarFn` type signature (dual scalar/bulk overloads)
+
+3. **Track balar.run() contexts**: Traverses the AST to determine if a call is within a `balar.run()` processor function
+
+4. **Detect conditional calls**: Checks for `if` statements, `switch` statements, ternary operators, and short-circuit logical operators (`&&`, `||`) between the call and the `balar.run()` context
+
+5. **Allow balar.if/switch**: Recognizes `balar.if()` and `balar.switch()` as valid conditional constructs
+
+## Limitations
+
+- **IDE-only diagnostics**: This plugin only provides diagnostics in your IDE. It does not block the TypeScript build process (`tsc`). This is a limitation of TypeScript Language Server plugins.
+
+- **Type detection**: The plugin relies on TypeScript's type system to identify balar-wrapped functions. If type information is not available or accurate, the plugin may not detect all violations.
+
+## Development
+
+To build the plugin:
+
+```bash
+npm install
+npx tsc
+```
+
+The compiled plugin will be in the `out/` directory.
+
+To work on the plugin with live reloading:
+
+```bash
+# Watch mode for plugin development
 npx tsc --watch
-```
 
-Next, get the example project up and running, it will load your TSServer Plugin from the emitted JavaScript.
-
-```
-# Set up the host app to work in
+# In another terminal, open the example project in VS Code
 cd example
-npm i
-cd ..
-
-# Open one VS Code window to work on your plugin
 code .
 
-# Or to hook up a debugger, use this command
-# to have the TSServer wait till you attach:
-TSS_DEBUG_BRK=9559 code example
-
-# or use this to hook in later:
-TSS_DEBUG=9559 code example
+# Restart the TypeScript server after making changes:
+# CMD+Shift+P → "TypeScript: Restart TS Server"
 ```
 
-You can then use the launch options in this root project to connect your debugger to the running TSServer in the other window. To see changes, run the command palette "TypeScript: Reload Project" to restart the TSServer for the project.
+For debugging:
 
-Make sure that the TypeScript version on that project runs from your `node_modules` and not the version which is embedded in vscode. You can see the logs via the vscode command 'TypeScript: Open TS Server Logs." ( search for 'Loading tsserver-plugin' to see whether it loaded correctly. )
+```bash
+# Start VS Code with TSServer debugging enabled
+TSS_DEBUG=9559 code example
 
-### What Now?
+# Or to wait for debugger attachment:
+TSS_DEBUG_BRK=9559 code example
+```
 
-This project has a `debugger` statement inside the completions which will trigger on completions, you can get that running and then you have proven the toolset works and get started building your plugin.
+Check the logs via the VS Code command "TypeScript: Open TS Server Logs" (search for 'Balar linter plugin' to see if it loaded correctly).
 
-You can read up the docs on [Language Service Plugins in the TypeScript repo wiki](https://github.com/microsoft/TypeScript/wiki/Writing-a-Language-Service-Plugin#overview-writing-a-simple-plugin).
+## Testing
+
+The `example/` directory contains test cases demonstrating both correct and incorrect usage. Open the example files in VS Code (with the plugin configured) to see the diagnostics in action.
+
+## License
+
+MIT
