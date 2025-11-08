@@ -18,11 +18,15 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
       // Override getSemanticDiagnostics to add balar-specific checks
       proxy.getSemanticDiagnostics = (fileName) => {
         const prior = info.languageService.getSemanticDiagnostics(fileName);
-        const program = info.languageService.getProgram();
-        if (!program) return prior;
+        const maybeProgram = info.languageService.getProgram();
+        if (!maybeProgram) return prior;
 
-        const sourceFile = program.getSourceFile(fileName);
-        if (!sourceFile) return prior;
+        // TypeScript control flow analysis doesn't work through closures, so capture program in a non-null variable
+        const program: ts.Program = maybeProgram;
+
+        const maybeSourceFile = program.getSourceFile(fileName);
+        if (!maybeSourceFile) return prior;
+        const sourceFile: ts.SourceFile = maybeSourceFile;
 
         const checker = program.getTypeChecker();
         const newDiagnostics: ts.Diagnostic[] = [];
@@ -49,11 +53,11 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
 
               // Check if this is a call to a property on a Facade or ObjectFacade
               if (isBalarWrappedCall(objTypeString)) {
-                info.project.projectService.logger.info(`[Balar] Found balar-wrapped function call!`);
-                const balarContext = findBalarContext(node, balarIdentifiers, sourceFile!);
+                info.project.projectService.logger.info(`[Balar] Found balar-wrapped function call in ${sourceFile.fileName}!`);
+                const balarContext = findBalarContext(node, balarIdentifiers, program, info);
 
                 if (!balarContext) {
-                  info.project.projectService.logger.info(`[Balar] Called outside context - reporting error`);
+                  info.project.projectService.logger.info(`[Balar] ✗ Called outside context - reporting error`);
                   // Error: BalarFn called outside balar.run()
                   newDiagnostics.push({
                     file: sourceFile,
@@ -66,7 +70,7 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
                 } else {
                   info.project.projectService.logger.info(`[Balar] Called inside context - checking for conditionals`);
                   // Inside balar.run(), check for conditional calls
-                  const conditionalParent = findConditionalParent(node, balarContext.node, balarIdentifiers, sourceFile!);
+                  const conditionalParent = findConditionalParent(node, balarContext.node, balarIdentifiers, program, info);
                   if (conditionalParent) {
                     info.project.projectService.logger.info(`[Balar] Found conditional call - reporting error`);
                     newDiagnostics.push({
@@ -141,7 +145,7 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
       type: 'run';
     }
 
-    function findBalarContext(node: ts.Node, balarIdentifiers: string[], sourceFile: ts.SourceFile): BalarContext | null {
+    function findBalarContext(node: ts.Node, balarIdentifiers: string[], program: ts.Program, info: ts.server.PluginCreateInfo): BalarContext | null {
       // Strategy:
       // 1. Find the containing function
       // 2. Check if it's passed to balar.run()
@@ -153,7 +157,7 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
       }
 
       const visited = new Set<ts.Node>();
-      return isFunctionInBalarContext(containingFunction, balarIdentifiers, sourceFile, visited);
+      return isFunctionInBalarContext(containingFunction, balarIdentifiers, program, visited, info);
     }
 
     // Helper: Find the closest containing function
@@ -177,8 +181,9 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
     function isFunctionInBalarContext(
       func: ts.Node,
       balarIdentifiers: string[],
-      sourceFile: ts.SourceFile,
-      visited: Set<ts.Node>
+      program: ts.Program,
+      visited: Set<ts.Node>,
+      info: ts.server.PluginCreateInfo
     ): BalarContext | null {
       // Prevent infinite loops in recursive calls
       if (visited.has(func)) {
@@ -186,7 +191,11 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
       }
       visited.add(func);
 
-      // Check if this function is directly passed to balar.run()
+      const funcName = getFunctionName(func);
+      const funcFile = func.getSourceFile().fileName;
+      info.project.projectService.logger.info(`[Balar] Checking if '${funcName || 'anonymous'}' in ${funcFile} is in context`);
+
+      // Check if this function is directly passed to balar.run() or balar.if()/balar.switch()
       const functionParent: ts.Node = func.parent;
       if (ts.isCallExpression(functionParent)) {
         const expr = functionParent.expression;
@@ -195,10 +204,31 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
           const obj = expr.expression;
           const prop = expr.name.text;
 
-          if (prop === 'run' && ts.isIdentifier(obj) && balarIdentifiers.indexOf(obj.text) >= 0) {
-            // This function is passed to balar.run()
-            if (functionParent.arguments.length >= 2 && functionParent.arguments[1] === func) {
-              return { node: func, type: 'run' };
+          // Get balar identifiers from THIS file (where balar.run() is called)
+          const funcSourceFile = func.getSourceFile();
+          const localBalarIds = findBalarIdentifiers(funcSourceFile);
+
+          info.project.projectService.logger.info(`[Balar]   Parent is ${ts.isIdentifier(obj) ? obj.text : '?'}.${prop}(), balar IDs: [${localBalarIds.join(', ')}]`);
+
+          if (ts.isIdentifier(obj) && localBalarIds.indexOf(obj.text) >= 0) {
+            if (prop === 'run') {
+              // This function is passed to balar.run()
+              if (functionParent.arguments.length >= 2 && functionParent.arguments[1] === func) {
+                info.project.projectService.logger.info(`[Balar]   ✓ Function IS directly passed to balar.run()!`);
+                return { node: func, type: 'run' };
+              }
+            } else if (prop === 'if' || prop === 'switch') {
+              // This function is passed as an argument to balar.if() or balar.switch()
+              // Check if the balar.if()/balar.switch() call itself is in a balar context
+              info.project.projectService.logger.info(`[Balar]   Function is passed to balar.${prop}(), checking if that call is in context...`);
+              const containingFunctionOfBalarCall = findContainingFunction(functionParent);
+              if (containingFunctionOfBalarCall) {
+                const context = isFunctionInBalarContext(containingFunctionOfBalarCall, balarIdentifiers, program, visited, info);
+                if (context) {
+                  info.project.projectService.logger.info(`[Balar]   ✓ Function IS passed to balar.${prop}() which is in context!`);
+                  return context;
+                }
+              }
             }
           }
         }
@@ -207,24 +237,30 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
       // Not directly passed to balar.run(), so find where this function is called from
       const functionName = getFunctionName(func);
       if (!functionName) {
-        // Anonymous function not passed to balar.run() - not in context
+        info.project.projectService.logger.info(`[Balar]   Anonymous function, not checking call sites`);
         return null;
       }
 
-      // Find all call sites of this function
-      const callSites = findCallSites(functionName, sourceFile);
+      // Find all call sites of this specific function declaration across all files
+      const callSites = findCallSites(func, program);
+      info.project.projectService.logger.info(`[Balar]   Found ${callSites.length} call site(s) for '${functionName}'`);
 
       // Check if any call site is in a balar context
       for (const callSite of callSites) {
+        const callSiteFile = callSite.getSourceFile().fileName;
+        info.project.projectService.logger.info(`[Balar]   Checking call site in ${callSiteFile}`);
+
         const callingFunction = findContainingFunction(callSite);
         if (callingFunction) {
-          const context = isFunctionInBalarContext(callingFunction, balarIdentifiers, sourceFile, visited);
+          const context = isFunctionInBalarContext(callingFunction, balarIdentifiers, program, visited, info);
           if (context) {
+            info.project.projectService.logger.info(`[Balar]   ✓ Found context through call chain!`);
             return context;
           }
         }
       }
 
+      info.project.projectService.logger.info(`[Balar]   ✗ No context found`);
       return null;
     }
 
@@ -242,22 +278,55 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
       return null;
     }
 
-    // Helper: Find all call sites of a function by name
-    function findCallSites(functionName: string, sourceFile: ts.SourceFile): ts.CallExpression[] {
+    // Helper: Find all call sites of a specific function declaration across all source files
+    function findCallSites(functionDecl: ts.Node, program: ts.Program): ts.CallExpression[] {
       const callSites: ts.CallExpression[] = [];
+      const checker = program.getTypeChecker();
+      const functionName = getFunctionName(functionDecl);
 
-      function visit(node: ts.Node) {
-        if (ts.isCallExpression(node)) {
-          // Check for direct function call (e.g., helperA(...))
-          if (ts.isIdentifier(node.expression) && node.expression.text === functionName) {
-            callSites.push(node);
-          }
-        }
-
-        ts.forEachChild(node, visit);
+      if (!functionName) {
+        return callSites;
       }
 
-      visit(sourceFile);
+      // Search across all source files in the program
+      for (const sourceFile of program.getSourceFiles()) {
+        // Skip declaration files (.d.ts)
+        if (sourceFile.isDeclarationFile) {
+          continue;
+        }
+
+        function visit(node: ts.Node) {
+          if (ts.isCallExpression(node)) {
+            // Check for direct function call (e.g., helperA(...))
+            if (ts.isIdentifier(node.expression) && node.expression.text === functionName) {
+              // Verify this call actually refers to our specific function declaration
+              let symbol = checker.getSymbolAtLocation(node.expression);
+              if (symbol) {
+                // Resolve through import aliases
+                if (symbol.flags & ts.SymbolFlags.Alias) {
+                  symbol = checker.getAliasedSymbol(symbol);
+                }
+
+                const declarations = symbol.declarations;
+                if (declarations) {
+                  // Check if any of the declarations match our function
+                  for (const decl of declarations) {
+                    if (decl === functionDecl) {
+                      callSites.push(node);
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          ts.forEachChild(node, visit);
+        }
+
+        visit(sourceFile);
+      }
+
       return callSites;
     }
 
@@ -277,7 +346,8 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
       node: ts.Node,
       balarContextNode: ts.Node,
       balarIdentifiers: string[],
-      sourceFile: ts.SourceFile
+      program: ts.Program,
+      info: ts.server.PluginCreateInfo
     ): ts.Node | null {
       // First, check for direct conditionals in the current function
       const directConditional = findDirectConditionalParent(node, balarContextNode, balarIdentifiers);
@@ -289,7 +359,7 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
       const containingFunction = findContainingFunction(node);
       if (containingFunction && containingFunction !== balarContextNode) {
         const visited = new Set<ts.Node>();
-        return isFunctionCalledConditionally(containingFunction, balarContextNode, balarIdentifiers, sourceFile, visited);
+        return isFunctionCalledConditionally(containingFunction, balarContextNode, balarIdentifiers, program, visited, info);
       }
 
       return null;
@@ -359,8 +429,9 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
       func: ts.Node,
       balarContextNode: ts.Node,
       balarIdentifiers: string[],
-      sourceFile: ts.SourceFile,
-      visited: Set<ts.Node>
+      program: ts.Program,
+      visited: Set<ts.Node>,
+      info: ts.server.PluginCreateInfo
     ): ts.Node | null {
       // Prevent infinite loops
       if (visited.has(func)) {
@@ -374,8 +445,8 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
         return null;
       }
 
-      // Find all call sites of this function
-      const callSites = findCallSites(functionName, sourceFile);
+      // Find all call sites of this specific function declaration across all files
+      const callSites = findCallSites(func, program);
 
       // Check each call site
       for (const callSite of callSites) {
@@ -388,7 +459,7 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
         // Check if the function containing this call site is itself called conditionally
         const callingFunction = findContainingFunction(callSite);
         if (callingFunction && callingFunction !== balarContextNode) {
-          const conditionalInChain = isFunctionCalledConditionally(callingFunction, balarContextNode, balarIdentifiers, sourceFile, visited);
+          const conditionalInChain = isFunctionCalledConditionally(callingFunction, balarContextNode, balarIdentifiers, program, visited, info);
           if (conditionalInChain) {
             return conditionalInChain;
           }
