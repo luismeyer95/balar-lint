@@ -20,7 +20,8 @@
     "build": "tsc",
     "test": "npm run build && ts-node tests/test-runner.ts",
     "test:update": "npm run build && ts-node tests/test-runner.ts --update",
-    "test:update:dry-run": "npm run build && ts-node tests/test-runner.ts --dry-run"
+    "test:update:dry-run": "npm run build && ts-node tests/test-runner.ts --dry-run",
+    "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
     "typescript": "^5.3.0"
