@@ -1,6 +1,7 @@
 {
   "name": "example-tsc-codebase",
   "dependencies": {
+    "balar": "^0.3.0",
     "tsserver-plugin": "file:../dist",
     "typescript": "^4.4.3"
   }
