@@ -13,8 +13,7 @@ async function example() {
     const results = await balar.run(urls, async (url) => {
         const data = await balar.if(
             url.includes("google"),
-            async () => await wrap.fetch(url), // ✅ PASS: Inside balar.if() is allowed
-            async () => undefined
+            () => wrap.fetch(url) // ✅ PASS: Inside balar.if() is allowed
         );
 
         return data;

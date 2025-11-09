@@ -195,46 +195,41 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
       const funcFile = func.getSourceFile().fileName;
       info.project.projectService.logger.info(`[Balar] Checking if '${funcName || 'anonymous'}' in ${funcFile} is in context`);
 
-      // Check if this function is directly passed to balar.run() or balar.if()/balar.switch()
+      // Check if this function is passed as an argument to any call expression
       const functionParent: ts.Node = func.parent;
       if (ts.isCallExpression(functionParent)) {
         const expr = functionParent.expression;
 
+        // Special case: Check if directly passed to balar.run() (this is the root context)
         if (ts.isPropertyAccessExpression(expr)) {
           const obj = expr.expression;
           const prop = expr.name.text;
 
-          // Get balar identifiers from THIS file (where balar.run() is called)
-          const funcSourceFile = func.getSourceFile();
-          const localBalarIds = findBalarIdentifiers(funcSourceFile);
+          if (prop === 'run' && ts.isIdentifier(obj)) {
+            const funcSourceFile = func.getSourceFile();
+            const localBalarIds = findBalarIdentifiers(funcSourceFile);
 
-          info.project.projectService.logger.info(`[Balar]   Parent is ${ts.isIdentifier(obj) ? obj.text : '?'}.${prop}(), balar IDs: [${localBalarIds.join(', ')}]`);
-
-          if (ts.isIdentifier(obj) && localBalarIds.indexOf(obj.text) >= 0) {
-            if (prop === 'run') {
-              // This function is passed to balar.run()
-              if (functionParent.arguments.length >= 2 && functionParent.arguments[1] === func) {
-                info.project.projectService.logger.info(`[Balar]   ✓ Function IS directly passed to balar.run()!`);
-                return { node: func, type: 'run' };
-              }
-            } else if (prop === 'if' || prop === 'switch') {
-              // This function is passed as an argument to balar.if() or balar.switch()
-              // Check if the balar.if()/balar.switch() call itself is in a balar context
-              info.project.projectService.logger.info(`[Balar]   Function is passed to balar.${prop}(), checking if that call is in context...`);
-              const containingFunctionOfBalarCall = findContainingFunction(functionParent);
-              if (containingFunctionOfBalarCall) {
-                const context = isFunctionInBalarContext(containingFunctionOfBalarCall, balarIdentifiers, program, visited, info);
-                if (context) {
-                  info.project.projectService.logger.info(`[Balar]   ✓ Function IS passed to balar.${prop}() which is in context!`);
-                  return context;
-                }
-              }
+            if (localBalarIds.indexOf(obj.text) >= 0 && functionParent.arguments.length >= 2 && functionParent.arguments[1] === func) {
+              info.project.projectService.logger.info(`[Balar]   ✓ Function IS directly passed to balar.run()!`);
+              return { node: func, type: 'run' };
             }
+          }
+        }
+
+        // For any other function call (balar.if/switch, helperA, obj.method, etc.),
+        // check if the call itself is in a balar context
+        info.project.projectService.logger.info(`[Balar]   Function is passed as argument to a call, checking if that call is in context...`);
+        const containingFunctionOfCall = findContainingFunction(functionParent);
+        if (containingFunctionOfCall) {
+          const context = isFunctionInBalarContext(containingFunctionOfCall, balarIdentifiers, program, visited, info);
+          if (context) {
+            info.project.projectService.logger.info(`[Balar]   ✓ Function IS passed to a call which is in context!`);
+            return context;
           }
         }
       }
 
-      // Not directly passed to balar.run(), so find where this function is called from
+      // Not directly passed to balar.run(), so find where this function is called or referenced
       const functionName = getFunctionName(func);
       if (!functionName) {
         info.project.projectService.logger.info(`[Balar]   Anonymous function, not checking call sites`);
@@ -256,6 +251,26 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
           if (context) {
             info.project.projectService.logger.info(`[Balar]   ✓ Found context through call chain!`);
             return context;
+          }
+        }
+      }
+
+      // Also find where this function is referenced (passed as argument, not called)
+      const references = findFunctionReferences(func, program);
+      info.project.projectService.logger.info(`[Balar]   Found ${references.length} reference(s) for '${functionName}'`);
+
+      // Check if any reference is passed to a call that is in context
+      for (const ref of references) {
+        // Check if this reference is an argument to a call expression
+        if (ts.isCallExpression(ref.parent)) {
+          info.project.projectService.logger.info(`[Balar]   Reference is passed as argument to a call`);
+          const containingFunctionOfCall = findContainingFunction(ref.parent);
+          if (containingFunctionOfCall) {
+            const context = isFunctionInBalarContext(containingFunctionOfCall, balarIdentifiers, program, visited, info);
+            if (context) {
+              info.project.projectService.logger.info(`[Balar]   ✓ Found context through function reference!`);
+              return context;
+            }
           }
         }
       }
@@ -328,6 +343,68 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
       }
 
       return callSites;
+    }
+
+    // Helper: Find all references to a specific function declaration (e.g., passed as argument)
+    function findFunctionReferences(functionDecl: ts.Node, program: ts.Program): ts.Identifier[] {
+      const references: ts.Identifier[] = [];
+      const checker = program.getTypeChecker();
+      const functionName = getFunctionName(functionDecl);
+
+      if (!functionName) {
+        return references;
+      }
+
+      // Search across all source files in the program
+      for (const sourceFile of program.getSourceFiles()) {
+        // Skip declaration files (.d.ts)
+        if (sourceFile.isDeclarationFile) {
+          continue;
+        }
+
+        function visit(node: ts.Node) {
+          // Look for identifier references (not in call position)
+          if (ts.isIdentifier(node) && node.text === functionName) {
+            // Skip if this is the function declaration itself
+            if (node.parent === functionDecl || node === functionDecl) {
+              ts.forEachChild(node, visit);
+              return;
+            }
+
+            // Skip if this is in a call expression position (already handled by findCallSites)
+            if (ts.isCallExpression(node.parent) && node.parent.expression === node) {
+              ts.forEachChild(node, visit);
+              return;
+            }
+
+            // Verify this reference actually refers to our specific function declaration
+            let symbol = checker.getSymbolAtLocation(node);
+            if (symbol) {
+              // Resolve through import aliases
+              if (symbol.flags & ts.SymbolFlags.Alias) {
+                symbol = checker.getAliasedSymbol(symbol);
+              }
+
+              const declarations = symbol.declarations;
+              if (declarations) {
+                // Check if any of the declarations match our function
+                for (const decl of declarations) {
+                  if (decl === functionDecl) {
+                    references.push(node);
+                    break;
+                  }
+                }
+              }
+            }
+          }
+
+          ts.forEachChild(node, visit);
+        }
+
+        visit(sourceFile);
+      }
+
+      return references;
     }
 
     // Helper: Check if a node is inside another node
