@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * Test runner for the Balar TypeScript Language Service Plugin
  * Emulates VSCode's TypeScript setup to capture diagnostics exactly as they appear in the IDE
@@ -52,11 +53,7 @@ function runTests(updateSnapshots: boolean = false) {
     process.exit(1);
   }
 
-  const parsedConfig = ts.parseJsonConfigFileContent(
-    configFile.config,
-    ts.sys,
-    EXAMPLE_DIR,
-  );
+  const parsedConfig = ts.parseJsonConfigFileContent(configFile.config, ts.sys, EXAMPLE_DIR);
 
   // Create a language service host
   const servicesHost: ts.LanguageServiceHost = {
@@ -79,10 +76,7 @@ function runTests(updateSnapshots: boolean = false) {
   };
 
   // Create the language service
-  const languageService = ts.createLanguageService(
-    servicesHost,
-    ts.createDocumentRegistry(),
-  );
+  const languageService = ts.createLanguageService(servicesHost, ts.createDocumentRegistry());
 
   // Load and initialize the plugin
   const pluginModule = require(path.join(__dirname, "dist/index.js"));
@@ -171,10 +165,7 @@ function runTests(updateSnapshots: boolean = false) {
   let failed = 0;
 
   for (const [testFile, diagnostics] of results) {
-    const snapshotPath = path.join(
-      SNAPSHOT_DIR,
-      testFile.replace(/\//g, "_").replace(/\.ts$/, ".json"),
-    );
+    const snapshotPath = path.join(SNAPSHOT_DIR, testFile.replace(/\//g, "_").replace(/\.ts$/, ".json"));
 
     const snapshot = JSON.stringify(diagnostics, null, 2);
 

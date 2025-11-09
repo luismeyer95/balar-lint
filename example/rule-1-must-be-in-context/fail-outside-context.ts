@@ -1,9 +1,9 @@
 import { balar } from "balar";
 
 const wrap = balar.wrap.fns({
-    fetch: async (url: string[]) => {
-        return new Map(url.map((u) => [u, u]));
-    },
+  fetch: async (url: string[]) => {
+    return new Map(url.map((u) => [u, u]));
+  },
 });
 
 // ❌ FAIL: Calling balar-wrapped function outside balar.run()

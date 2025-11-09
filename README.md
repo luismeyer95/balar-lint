@@ -13,11 +13,13 @@ This plugin enforces two key rules for using balar:
 ## Installation
 
 1. Install the plugin in your project:
+
    ```bash
    npm install --save-dev tsserver-plugin
    ```
 
 2. Configure your `tsconfig.json` to use the plugin:
+
    ```json
    {
      "compilerOptions": {
@@ -37,7 +39,7 @@ This plugin enforces two key rules for using balar:
 ### ❌ Error: Calling outside balar.run()
 
 ```typescript
-import { balar } from 'balar';
+import { balar } from "balar";
 
 const wrap = balar.wrap.fns({
   fetch: async (url: string[]) => {

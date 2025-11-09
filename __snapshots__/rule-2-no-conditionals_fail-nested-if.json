@@ -2,7 +2,7 @@
   {
     "file": "rule-2-no-conditionals/fail-nested-if.ts",
     "line": 24,
-    "column": 19,
+    "column": 13,
     "code": 9002,
     "message": "Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.",
     "category": "Error"
