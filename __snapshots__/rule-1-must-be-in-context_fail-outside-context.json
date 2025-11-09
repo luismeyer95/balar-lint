@@ -1,0 +1,10 @@
+[
+  {
+    "file": "rule-1-must-be-in-context/fail-outside-context.ts",
+    "line": 10,
+    "column": 16,
+    "code": 9001,
+    "message": "Balar-wrapped function must be called inside a balar.run() context",
+    "category": "Error"
+  }
+]

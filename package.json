@@ -3,9 +3,15 @@
   "version": "0.0.1",
   "license": "MIT",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "npm run build && ts-node test-runner.ts",
+    "test:update": "npm run build && ts-node test-runner.ts --update"
   },
   "dependencies": {
     "typescript": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0"
   }
 }

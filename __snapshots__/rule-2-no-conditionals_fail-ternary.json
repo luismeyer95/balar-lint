@@ -1,0 +1,10 @@
+[
+  {
+    "file": "rule-2-no-conditionals/fail-ternary.ts",
+    "line": 15,
+    "column": 21,
+    "code": 9002,
+    "message": "Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.",
+    "category": "Error"
+  }
+]

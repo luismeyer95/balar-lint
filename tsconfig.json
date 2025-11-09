@@ -3,7 +3,8 @@
     "src/**"
   ],
   "exclude": [
-    "example"
+    "example",
+    "test-runner.ts"
   ],
   "compilerOptions": {
     "target": "es2017", /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
