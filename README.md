@@ -1,6 +1,6 @@
 # `balar-lint`
 
-The `balar` TypeScript library allows developers to build network-efficient batch processing APIs with simpler code, by handling the burden of partitioning batch items depending on their data-fetching requirements.
+The [`balar` TypeScript library](https://github.com/luismeyer95/balar) allows developers to build network-efficient batch processing APIs with simpler code, by handling the burden of partitioning batch items depending on their data-fetching requirements.
 
 When using this library, some rules need to be enforced to ensure efficient batching behavior. Recommended usage of certain DSL-like APIs of this library cannot be enforced directly at build/runtime, much like React hooks. The TypeScript Language Server plugin + CLI checker in this package fills the gap by enabling static analysis on your codebase to spot usage issues, displaying real-time diagnostics directly in your IDE with little configuration.
 
