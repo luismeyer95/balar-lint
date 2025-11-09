@@ -4,7 +4,7 @@
     "line": 20,
     "column": 24,
     "code": 90001,
-    "message": "Balar-wrapped function must be called inside a balar.run() context",
+    "message": "balar-wrapped function must be called inside a balar.run() context",
     "category": "Error"
   }
 ]

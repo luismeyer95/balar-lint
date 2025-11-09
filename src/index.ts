@@ -47,7 +47,7 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
                   file: sourceFile,
                   start: node.getStart(),
                   length: node.getWidth(),
-                  messageText: "Balar-wrapped function must be called inside a balar.run() context",
+                  messageText: "balar-wrapped function must be called inside a balar.run() context",
                   category: ts.DiagnosticCategory.Error,
                   code: BALAR_WRAPPED_OUTSIDE_CONTEXT,
                 });
@@ -59,7 +59,7 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
                     start: node.getStart(),
                     length: node.getWidth(),
                     messageText:
-                      "Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.",
+                      "balar-wrapped function must not be called conditionally inside balar.run(), use balar.if() or balar.switch() instead to ensure efficient partitioning of your batch",
                     category: ts.DiagnosticCategory.Error,
                     code: BALAR_WRAPPED_CONDITIONAL_CALL,
                   });

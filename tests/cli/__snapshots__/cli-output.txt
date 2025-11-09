@@ -12,32 +12,32 @@ Total errors: 14
 ✗ Found usage errors:
 
 rule-1-must-be-in-context/fail-class-dependency-injection.ts
-  20:24 [90001] Balar-wrapped function must be called inside a balar.run() context
+  20:24 [90001] balar-wrapped function must be called inside a balar.run() context
 rule-1-must-be-in-context/fail-outside-context-with-object-wrap.ts
-  16:22 [90001] Balar-wrapped function must be called inside a balar.run() context
+  16:22 [90001] balar-wrapped function must be called inside a balar.run() context
 rule-1-must-be-in-context/fail-outside-context.ts
-  10:16 [90001] Balar-wrapped function must be called inside a balar.run() context
+  10:16 [90001] balar-wrapped function must be called inside a balar.run() context
 rule-2-no-conditionals/fail-aliased-import-conditional.ts
-  16:26 [90002] Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.
+  16:26 [90002] balar-wrapped function must not be called conditionally inside balar.run(), use balar.if() or balar.switch() instead to ensure efficient partitioning of your batch
 rule-2-no-conditionals/fail-balar-switch-inside-if.ts
-  17:38 [90002] Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.
-  18:38 [90002] Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.
+  17:38 [90002] balar-wrapped function must not be called conditionally inside balar.run(), use balar.if() or balar.switch() instead to ensure efficient partitioning of your batch
+  18:38 [90002] balar-wrapped function must not be called conditionally inside balar.run(), use balar.if() or balar.switch() instead to ensure efficient partitioning of your batch
 rule-2-no-conditionals/fail-if-statement.ts
-  17:20 [90002] Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.
+  17:20 [90002] balar-wrapped function must not be called conditionally inside balar.run(), use balar.if() or balar.switch() instead to ensure efficient partitioning of your batch
 rule-2-no-conditionals/fail-logical-and.ts
-  14:38 [90002] Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.
+  14:38 [90002] balar-wrapped function must not be called conditionally inside balar.run(), use balar.if() or balar.switch() instead to ensure efficient partitioning of your batch
 rule-2-no-conditionals/fail-logical-or.ts
-  14:35 [90002] Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.
+  14:35 [90002] balar-wrapped function must not be called conditionally inside balar.run(), use balar.if() or balar.switch() instead to ensure efficient partitioning of your batch
 rule-2-no-conditionals/fail-nested-if.ts
-  24:13 [90002] Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.
+  24:13 [90002] balar-wrapped function must not be called conditionally inside balar.run(), use balar.if() or balar.switch() instead to ensure efficient partitioning of your batch
 rule-2-no-conditionals/fail-switch-statement.ts
-  17:28 [90002] Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.
+  17:28 [90002] balar-wrapped function must not be called conditionally inside balar.run(), use balar.if() or balar.switch() instead to ensure efficient partitioning of your batch
 rule-2-no-conditionals/fail-ternary-with-call-chain.ts
-  22:9 [90002] Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.
+  22:9 [90002] balar-wrapped function must not be called conditionally inside balar.run(), use balar.if() or balar.switch() instead to ensure efficient partitioning of your batch
 rule-2-no-conditionals/fail-ternary.ts
-  15:15 [90002] Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.
+  15:15 [90002] balar-wrapped function must not be called conditionally inside balar.run(), use balar.if() or balar.switch() instead to ensure efficient partitioning of your batch
 rule-2-no-conditionals/fail-call-chain-conditional/helperB.ts
-  11:9 [90002] Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.
+  11:9 [90002] balar-wrapped function must not be called conditionally inside balar.run(), use balar.if() or balar.switch() instead to ensure efficient partitioning of your batch
 
 
 === STDERR ===

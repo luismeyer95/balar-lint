@@ -4,7 +4,7 @@
     "line": 14,
     "column": 38,
     "code": 90002,
-    "message": "Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.",
+    "message": "balar-wrapped function must not be called conditionally inside balar.run(), use balar.if() or balar.switch() instead to ensure efficient partitioning of your batch",
     "category": "Error"
   }
 ]

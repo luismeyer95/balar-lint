@@ -8,11 +8,11 @@ Examples are organized by rule:
 
 ### Rule 1: Must be in context (`rule-1-must-be-in-context/`)
 
-Balar-wrapped functions must be called inside a `balar.run()` context.
+balar-wrapped functions must be called inside a `balar.run()` context.
 
 ### Rule 2: No conditionals (`rule-2-no-conditionals/`)
 
-Balar-wrapped functions must not be called conditionally inside `balar.run()`. Use `balar.if()` or `balar.switch()` instead.
+balar-wrapped functions must not be called conditionally inside `balar.run()`. Use `balar.if()` or `balar.switch()` instead.
 
 ## Error codes
 
