@@ -1,4 +1,4 @@
-# Balar TypeScript Language Server Plugin
+# `balar-lint`
 
 The `balar` TypeScript library allows developers to build network-efficient batch processing APIs without the headaches related to the partitioning logic you would need when your items have different processing/data-fetching requirements.
 
@@ -83,8 +83,7 @@ const results = await balar.run(urls, async (url) => {
 const results = await balar.run(urls, async (url) => {
   const data = await balar.if(
     url.includes("google"),
-    async () => await wrap.fetch(url),
-    async () => undefined
+    () => wrap.fetch(url)
   );
 
   return data;
