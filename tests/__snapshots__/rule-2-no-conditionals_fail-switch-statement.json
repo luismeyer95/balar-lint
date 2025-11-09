@@ -1,0 +1,10 @@
+[
+  {
+    "file": "rule-2-no-conditionals/fail-switch-statement.ts",
+    "line": 17,
+    "column": 28,
+    "code": 9002,
+    "message": "Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.",
+    "category": "Error"
+  }
+]

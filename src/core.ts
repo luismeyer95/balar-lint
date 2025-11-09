@@ -94,6 +94,29 @@ export function isFunctionInBalarContext(
     }
   }
 
+  let current: ts.Node | undefined = func.parent;
+  while (current && !ts.isSourceFile(current)) {
+    if (ts.isFunctionLike(current)) {
+      break;
+    }
+
+    if (current.parent && ts.isCallExpression(current.parent)) {
+      const callExpr = current.parent;
+      if (callExpr.arguments.some((arg) => arg === current)) {
+        const containingFunction = findContainingFunction(callExpr);
+        if (containingFunction && containingFunction !== func) {
+          const context = isFunctionInBalarContext(containingFunction, balarIdentifiers, program, visited);
+          if (context) {
+            return context;
+          }
+        }
+        break;
+      }
+    }
+
+    current = current.parent;
+  }
+
   if (ts.isMethodDeclaration(func)) {
     const methodCallSites = findMethodCallSites(func, program);
     for (const callSite of methodCallSites) {
