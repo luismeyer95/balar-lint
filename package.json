@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsc",
     "test": "npm run build && ts-node tests/test-runner.ts",
-    "test:update": "npm run build && ts-node tests/test-runner.ts --update"
+    "test:update": "npm run build && ts-node tests/test-runner.ts --update",
+    "test:update:dry-run": "npm run build && ts-node tests/test-runner.ts --dry-run"
   },
   "dependencies": {
     "typescript": "^5.3.0"
