@@ -2,7 +2,7 @@
   "name": "balar-lint",
   "version": "0.3.0",
   "description": "TypeScript Language Server plugin that enforces correct usage of balar's batching APIs through static analysis and real-time IDE diagnostics",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "bin": {
     "balar-lint": "./dist/bin/balar-lint.js"
   },
@@ -21,6 +21,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "install:all": "npm i && npm run build && npm i --prefix ./examples/",
     "test": "npm run build && npm run test:examples && npm run test:cli",
     "test:examples": "ts-node tests/examples/test-runner.ts",
     "test:examples:update": "ts-node tests/examples/test-runner.ts --update",

@@ -2,7 +2,7 @@
   "name": "example-tsc-codebase",
   "dependencies": {
     "balar": "^0.3.0",
-    "balar-lint": "file:../dist",
+    "balar-lint": "file:..",
     "typescript": "^4.4.3"
   }
 }
