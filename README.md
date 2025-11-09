@@ -1,6 +1,8 @@
 # Balar TypeScript Language Server Plugin
 
-A TypeScript Language Server plugin that detects incorrect usage of balar-wrapped bulk functions and provides real-time diagnostics in your IDE.
+The `balar` TypeScript library allows developers to build network-efficient batch processing APIs without the headaches related to the partitioning logic you would need when your items have different processing/data-fetching requirements.
+
+Using this library, some rules need to be enforced to ensure correct batching behavior in certain scenario. Correct usage of certain DSL-like APIs of this library cannot be enforced directly by the library at runtime, much like React hooks. This TypeScript Language Server plugin fills this gap by performing static analysis on your codebase to spot usage issues, displaying real-time diagnostics directly in your IDE with little configuration.
 
 ## Features
 
@@ -32,7 +34,7 @@ This plugin enforces two key rules for using balar:
    }
    ```
 
-3. Restart your TypeScript language server (in VS Code: `CMD+Shift+P` → "TypeScript: Restart TS Server")
+3. Restart your TypeScript language server if needed (in VS Code: `CMD+Shift+P` → "TypeScript: Restart TS Server")
 
 ## Examples
 
@@ -89,72 +91,9 @@ const results = await balar.run(urls, async (url) => {
 });
 ```
 
-## How It Works
-
-The plugin uses TypeScript's Language Service API to:
-
-1. **Detect balar imports**: Tracks all imports of `balar` from the 'balar' package (including aliased imports)
-
-2. **Identify BalarFn types**: Analyzes function call expressions and their types to determine if they are balar-wrapped functions by checking for the characteristic `BalarFn` type signature (dual scalar/bulk overloads)
-
-3. **Track balar.run() contexts**: Traverses the AST to determine if a call is within a `balar.run()` processor function
-
-4. **Detect conditional calls**: Checks for `if` statements, `switch` statements, ternary operators, and short-circuit logical operators (`&&`, `||`) between the call and the `balar.run()` context
-
-5. **Allow balar.if/switch**: Recognizes `balar.if()` and `balar.switch()` as valid conditional constructs
-
 ## Limitations
 
 - **IDE-only diagnostics**: This plugin only provides diagnostics in your IDE. It does not block the TypeScript build process (`tsc`). This is a limitation of TypeScript Language Server plugins.
-
-- **Type detection**: The plugin relies on TypeScript's type system to identify balar-wrapped functions. If type information is not available or accurate, the plugin may not detect all violations.
-
-## Development
-
-To build the plugin:
-
-```bash
-npm install
-npx tsc
-```
-
-The compiled plugin will be in the `out/` directory.
-
-To work on the plugin with live reloading:
-
-```bash
-# Watch mode for plugin development
-npx tsc --watch
-
-# In another terminal, open the examples project in VS Code
-cd examples
-code .
-
-# Restart the TypeScript server after making changes:
-# CMD+Shift+P → "TypeScript: Restart TS Server"
-```
-
-For debugging:
-
-```bash
-# Start VS Code with TSServer debugging enabled
-TSS_DEBUG=9559 code examples
-
-# Or to wait for debugger attachment:
-TSS_DEBUG_BRK=9559 code examples
-```
-
-Check the logs via the VS Code command "TypeScript: Open TS Server Logs" (search for 'Balar linter plugin' to see if it loaded correctly).
-
-## Testing
-
-Run automated tests with snapshot validation:
-
-```bash
-npm test
-```
-
-The `examples/` directory contains test cases demonstrating both correct and incorrect usage. The `tests/` directory contains the test runner and snapshot files.
 
 ## License
 
