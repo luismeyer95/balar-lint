@@ -12,13 +12,17 @@ async function example() {
   const results = await balar.run(urls, async (url) => {
     const domain = url.includes("google") ? "google" : url.includes("github") ? "github" : "other";
 
-    const data = await balar.switch(domain, [
-      ["google", async () => await wrap.fetch(url)],
-      ["github", async () => await wrap.fetch(url)],
-      async () => "unknown",
-    ]);
+    if (1 % 2 == 3) {
+      const data = await balar.switch(domain, [
+        ["google", async () => await wrap.fetch(url)],
+        ["github", async () => await wrap.fetch(url)],
+        async () => "unknown",
+      ]);
 
-    return data;
+      return data;
+    }
+
+    return {};
   });
 
   return results;

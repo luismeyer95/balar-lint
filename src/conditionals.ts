@@ -30,18 +30,6 @@ export function findDirectConditionalParent(
   let current: ts.Node | undefined = node.parent;
 
   while (current && current !== balarContextNode) {
-    if (ts.isCallExpression(current)) {
-      const expr = current.expression;
-      if (ts.isPropertyAccessExpression(expr)) {
-        const obj = expr.expression;
-        const prop = expr.name.text;
-
-        if ((prop === "if" || prop === "switch") && ts.isIdentifier(obj) && balarIdentifiers.indexOf(obj.text) >= 0) {
-          return null;
-        }
-      }
-    }
-
     if (ts.isIfStatement(current)) {
       return current;
     }
