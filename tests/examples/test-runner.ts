@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 import * as path from "path";
-import { setupPluginForSnapshotTests } from "./setup";
+import { setupPluginForSnapshotTests } from "../setup/plugin-setup";
 import { discoverTestFiles, collectDiagnostics } from "./discovery";
 import { ensureSnapshotDir, processSnapshots } from "./snapshots";
 import { printTestSummary, printDryRunSummary } from "./display";
 
-const EXAMPLE_DIR = path.join(__dirname, "..", "examples");
+const EXAMPLE_DIR = path.join(__dirname, "..", "..", "examples");
 const SNAPSHOT_DIR = path.join(__dirname, "__snapshots__");
-const PLUGIN_PATH = path.join(__dirname, "..", "dist/index.js");
+const PLUGIN_PATH = path.join(__dirname, "..", "..", "dist/src/index.js");
 
 function runTests(updateSnapshots: boolean = false, dryRun: boolean = false): void {
   const { proxy, exampleDir } = setupPluginForSnapshotTests(EXAMPLE_DIR, PLUGIN_PATH);

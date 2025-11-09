@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { setupBalarPlugin } from "../shared/plugin-setup";
+import { setupBalarPlugin } from "../../shared/plugin-setup";
 
 export interface PluginSetup {
   proxy: ts.LanguageService;

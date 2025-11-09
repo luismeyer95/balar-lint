@@ -11,14 +11,14 @@ export interface CliResult {
   diagnostics: Map<string, BalarDiagnostic[]>;
 }
 
-export function runBalarLint(projectPath: string): CliResult {
+export function runBalarLint(projectPath: string, pluginPath?: string): CliResult {
   const configPath = findTsConfig(projectPath);
   if (!configPath) {
     throw new Error(`Could not find tsconfig.json in ${projectPath}`);
   }
 
-  const pluginPath = path.join(__dirname, "index.js");
-  const { proxy, projectDir, fileNames } = setupBalarPlugin(path.dirname(configPath), pluginPath);
+  const resolvedPluginPath = pluginPath || path.join(__dirname, "index.js");
+  const { proxy, projectDir, fileNames } = setupBalarPlugin(path.dirname(configPath), resolvedPluginPath);
 
   const diagnosticsMap = new Map<string, BalarDiagnostic[]>();
   const sourceFiles = fileNames.filter((fileName) => {

@@ -21,9 +21,13 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "npm run build && ts-node tests/test-runner.ts",
-    "test:update": "npm run build && ts-node tests/test-runner.ts --update",
-    "test:update:dry-run": "npm run build && ts-node tests/test-runner.ts --dry-run",
+    "test": "npm run build && npm run test:examples && npm run test:cli",
+    "test:examples": "ts-node tests/examples/test-runner.ts",
+    "test:examples:update": "ts-node tests/examples/test-runner.ts --update",
+    "test:examples:dry-run": "ts-node tests/examples/test-runner.ts --dry-run",
+    "test:cli": "ts-node tests/cli/test-runner.ts",
+    "test:cli:update": "ts-node tests/cli/test-runner.ts --update",
+    "test:update": "npm run build && npm run test:examples:update && npm run test:cli:update",
     "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
