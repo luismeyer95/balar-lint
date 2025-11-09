@@ -1,7 +1,21 @@
 {
-  "name": "my-plugin",
-  "version": "0.0.1",
+  "name": "balar-lint",
+  "version": "0.3.0",
+  "description": "TypeScript Language Server plugin that enforces correct usage of balar's batching APIs through static analysis and real-time IDE diagnostics",
+  "main": "dist/index.js",
   "license": "MIT",
+  "keywords": [
+    "balar",
+    "typescript",
+    "language-server",
+    "plugin",
+    "linter",
+    "batch-processing"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/luismeyer/balar-linter.git"
+  },
   "scripts": {
     "build": "tsc",
     "test": "npm run build && ts-node tests/test-runner.ts",

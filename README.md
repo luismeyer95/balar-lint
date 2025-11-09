@@ -17,7 +17,7 @@ This plugin enforces two key rules for using balar:
 1. Install the plugin in your project:
 
    ```bash
-   npm install --save-dev tsserver-plugin
+   npm install --save-dev balar-lint
    ```
 
 2. Configure your `tsconfig.json` to use the plugin:
@@ -27,7 +27,7 @@ This plugin enforces two key rules for using balar:
      "compilerOptions": {
        "plugins": [
          {
-           "name": "tsserver-plugin"
+           "name": "balar-lint"
          }
        ]
      }
