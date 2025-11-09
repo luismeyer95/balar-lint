@@ -16,7 +16,6 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
       const maybeProgram = info.languageService.getProgram();
       if (!maybeProgram) return prior;
 
-      // TypeScript control flow analysis doesn't work through closures
       const program: ts.Program = maybeProgram;
 
       const maybeSourceFile = program.getSourceFile(fileName);
