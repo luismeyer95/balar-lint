@@ -3,6 +3,9 @@
   "version": "0.3.0",
   "description": "TypeScript Language Server plugin that enforces correct usage of balar's batching APIs through static analysis and real-time IDE diagnostics",
   "main": "dist/index.js",
+  "bin": {
+    "balar-lint": "./dist/bin/balar-lint.js"
+  },
   "license": "MIT",
   "keywords": [
     "balar",
@@ -24,6 +27,8 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
     "typescript": "^5.3.0"
   },
   "devDependencies": {

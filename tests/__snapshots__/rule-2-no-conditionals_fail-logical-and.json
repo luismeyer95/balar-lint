@@ -3,7 +3,7 @@
     "file": "rule-2-no-conditionals/fail-logical-and.ts",
     "line": 14,
     "column": 38,
-    "code": 9002,
+    "code": 90002,
     "message": "Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.",
     "category": "Error"
   }

@@ -1,6 +1,7 @@
 import type * as ts from "typescript/lib/tsserverlibrary";
 import { findBalarIdentifiers, isBalarWrappedCall, findBalarContext } from "./core";
 import { findConditionalParent } from "./conditionals";
+import { BALAR_WRAPPED_OUTSIDE_CONTEXT, BALAR_WRAPPED_CONDITIONAL_CALL } from "./constants";
 
 function init(modules: { typescript: typeof import("typescript/lib/tsserverlibrary") }) {
   const ts = modules.typescript;
@@ -48,7 +49,7 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
                   length: node.getWidth(),
                   messageText: "Balar-wrapped function must be called inside a balar.run() context",
                   category: ts.DiagnosticCategory.Error,
-                  code: 9001,
+                  code: BALAR_WRAPPED_OUTSIDE_CONTEXT,
                 });
               } else {
                 const conditionalParent = findConditionalParent(node, balarContext.node, balarIdentifiers, program);
@@ -60,7 +61,7 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
                     messageText:
                       "Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.",
                     category: ts.DiagnosticCategory.Error,
-                    code: 9002,
+                    code: BALAR_WRAPPED_CONDITIONAL_CALL,
                   });
                 }
               }

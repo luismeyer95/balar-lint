@@ -1,5 +1,5 @@
 {
-  "paths": ["src/**"],
+  "include": ["src/**/*", "bin/**/*", "shared/**/*"],
   "exclude": ["examples", "tests"],
   "compilerOptions": {
     "target": "es2017" /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,

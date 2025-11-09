@@ -36,6 +36,46 @@ This plugin enforces two key rules for using balar:
 
 3. Restart your TypeScript language server if needed (in VS Code: `CMD+Shift+P` → "TypeScript: Restart TS Server")
 
+## CLI Usage
+
+In addition to IDE integration, `balar-lint` provides a CLI tool for CI build scripts:
+
+```bash
+# Run in current directory
+npx balar-lint
+
+# Run on specific project
+npx balar-lint --project ./path/to/project
+
+# Show help
+npx balar-lint --help
+```
+
+The CLI will:
+- Find and analyze all TypeScript files in your project
+- Report balar usage errors with file locations and error codes
+
+**Example output:**
+
+```
+balar-lint report 🔎
+──────────────────────────────────────────────────
+
+Files checked: 28
+Files with errors: 2
+Total errors: 3
+
+✗ Found balar usage errors:
+
+src/api/users.ts
+  15:20 [90001] Balar-wrapped function must be called inside a balar.run() context
+  23:15 [90002] Balar-wrapped function must not be called conditionally inside balar.run(). Use balar.if() or balar.switch() instead.
+src/api/posts.ts
+  42:18 [90001] Balar-wrapped function must be called inside a balar.run() context
+```
+
+This complements the language server plugin by allowing you to integrate the same checks as part of your CI pipeline (TypeScript language server plugins are limited to editor diagnostics only).
+
 ## Examples
 
 ### ❌ Error: Calling outside balar.run()
@@ -89,10 +129,6 @@ const results = await balar.run(urls, async (url) => {
   return data;
 });
 ```
-
-## Limitations
-
-- **IDE-only diagnostics**: This plugin only provides diagnostics in your IDE. It does not block the TypeScript build process (`tsc`). This is a limitation of TypeScript Language Server plugins.
 
 ## License
 
