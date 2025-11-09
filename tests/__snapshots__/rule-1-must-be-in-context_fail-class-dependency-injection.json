@@ -1,0 +1,10 @@
+[
+  {
+    "file": "rule-1-must-be-in-context/fail-class-dependency-injection.ts",
+    "line": 20,
+    "column": 24,
+    "code": 9001,
+    "message": "Balar-wrapped function must be called inside a balar.run() context",
+    "category": "Error"
+  }
+]

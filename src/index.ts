@@ -192,6 +192,21 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
       }
     }
 
+    // Handle method declarations separately
+    if (ts.isMethodDeclaration(func)) {
+      const methodCallSites = findMethodCallSites(func, program);
+      for (const callSite of methodCallSites) {
+        const callingFunction = findContainingFunction(callSite);
+        if (callingFunction) {
+          const context = isFunctionInBalarContext(callingFunction, balarIdentifiers, program, visited);
+          if (context) {
+            return context;
+          }
+        }
+      }
+      return null;
+    }
+
     const functionName = getFunctionName(func);
     if (!functionName) {
       return null;
@@ -336,6 +351,144 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
     }
 
     return references;
+  }
+
+  function findMethodCallSites(methodDecl: ts.MethodDeclaration, program: ts.Program): ts.CallExpression[] {
+    const callSites: ts.CallExpression[] = [];
+    const checker = program.getTypeChecker();
+
+    if (!methodDecl.name || !ts.isIdentifier(methodDecl.name)) {
+      return callSites;
+    }
+
+    const methodName = methodDecl.name.text;
+
+    // Get the symbol for this method
+    const methodSymbolOrUndefined = checker.getSymbolAtLocation(methodDecl.name);
+    if (!methodSymbolOrUndefined) {
+      return callSites;
+    }
+    const methodSymbol: ts.Symbol = methodSymbolOrUndefined;
+
+    for (const sourceFile of program.getSourceFiles()) {
+      if (sourceFile.isDeclarationFile) {
+        continue;
+      }
+
+      function visit(node: ts.Node) {
+        // Look for calls like obj.method() or this.method()
+        if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+          const propAccess = node.expression;
+          if (ts.isIdentifier(propAccess.name) && propAccess.name.text === methodName) {
+            // Get the symbol of the method being called
+            const calledSymbol = checker.getSymbolAtLocation(propAccess.name);
+            if (calledSymbol) {
+              // Check if this is the same method or implements the same interface method
+              if (isMethodMatch(methodSymbol, calledSymbol, checker)) {
+                callSites.push(node);
+              }
+            }
+          }
+        }
+
+        ts.forEachChild(node, visit);
+      }
+
+      visit(sourceFile);
+    }
+
+    return callSites;
+  }
+
+  function isMethodMatch(targetSymbol: ts.Symbol, calledSymbol: ts.Symbol | undefined, checker: ts.TypeChecker): boolean {
+    if (!calledSymbol) {
+      return false;
+    }
+    // Direct match
+    if (targetSymbol === calledSymbol) {
+      return true;
+    }
+
+    // Check if they have the same declarations
+    const targetDecls = targetSymbol.declarations || [];
+    const calledDecls = calledSymbol.declarations || [];
+
+    for (const targetDecl of targetDecls) {
+      for (const calledDecl of calledDecls) {
+        if (targetDecl === calledDecl) {
+          return true;
+        }
+      }
+    }
+
+    // Check if one is an interface method and the other implements it
+    for (const targetDecl of targetDecls) {
+      if (ts.isMethodSignature(targetDecl) || ts.isMethodDeclaration(targetDecl)) {
+        for (const calledDecl of calledDecls) {
+          if (ts.isMethodSignature(calledDecl) || ts.isMethodDeclaration(calledDecl)) {
+            // Check if they have the same name and are related through implementation
+            if (areMethodsRelated(targetDecl, calledDecl, checker)) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  function areMethodsRelated(
+    method1: ts.MethodSignature | ts.MethodDeclaration,
+    method2: ts.MethodSignature | ts.MethodDeclaration,
+    checker: ts.TypeChecker
+  ): boolean {
+    // Get containing types
+    const type1 = method1.parent;
+    const type2 = method2.parent;
+
+    if (!type1 || !type2) {
+      return false;
+    }
+
+    // Check if one is an interface and the other is a class that implements it
+    if (ts.isInterfaceDeclaration(type1) && ts.isClassDeclaration(type2)) {
+      return classImplementsInterface(type2, type1, checker);
+    }
+
+    if (ts.isClassDeclaration(type1) && ts.isInterfaceDeclaration(type2)) {
+      return classImplementsInterface(type1, type2, checker);
+    }
+
+    return false;
+  }
+
+  function classImplementsInterface(
+    classDecl: ts.ClassDeclaration,
+    interfaceDecl: ts.InterfaceDeclaration,
+    checker: ts.TypeChecker
+  ): boolean {
+    if (!classDecl.heritageClauses) {
+      return false;
+    }
+
+    for (const heritage of classDecl.heritageClauses) {
+      if (heritage.token === ts.SyntaxKind.ImplementsKeyword) {
+        for (const type of heritage.types) {
+          const symbol = checker.getSymbolAtLocation(type.expression);
+          if (symbol) {
+            const declarations = symbol.declarations || [];
+            for (const decl of declarations) {
+              if (decl === interfaceDecl) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return false;
   }
 
   function isNodeInside(node: ts.Node, container: ts.Node): boolean {
