@@ -126,8 +126,8 @@ To work on the plugin with live reloading:
 # Watch mode for plugin development
 npx tsc --watch
 
-# In another terminal, open the example project in VS Code
-cd example
+# In another terminal, open the examples project in VS Code
+cd examples
 code .
 
 # Restart the TypeScript server after making changes:
@@ -138,17 +138,23 @@ For debugging:
 
 ```bash
 # Start VS Code with TSServer debugging enabled
-TSS_DEBUG=9559 code example
+TSS_DEBUG=9559 code examples
 
 # Or to wait for debugger attachment:
-TSS_DEBUG_BRK=9559 code example
+TSS_DEBUG_BRK=9559 code examples
 ```
 
 Check the logs via the VS Code command "TypeScript: Open TS Server Logs" (search for 'Balar linter plugin' to see if it loaded correctly).
 
 ## Testing
 
-The `example/` directory contains test cases demonstrating both correct and incorrect usage. Open the example files in VS Code (with the plugin configured) to see the diagnostics in action.
+Run automated tests with snapshot validation:
+
+```bash
+npm test
+```
+
+The `examples/` directory contains test cases demonstrating both correct and incorrect usage. The `tests/` directory contains the test runner and snapshot files.
 
 ## License
 

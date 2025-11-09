@@ -1,6 +1,6 @@
 {
   "paths": ["src/**"],
-  "exclude": ["example", "test-runner.ts"],
+  "exclude": ["examples", "tests"],
   "compilerOptions": {
     "target": "es2017" /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,
     "lib": ["es2017"] /* Specify library files to be included in the compilation. */,

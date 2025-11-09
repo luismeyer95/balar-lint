@@ -9,7 +9,7 @@ import * as ts from "typescript";
 import * as path from "path";
 import * as fs from "fs";
 
-const EXAMPLE_DIR = path.join(__dirname, "example");
+const EXAMPLE_DIR = path.join(__dirname, "..", "examples");
 const SNAPSHOT_DIR = path.join(__dirname, "__snapshots__");
 
 interface Diagnostic {
@@ -79,7 +79,7 @@ function runTests(updateSnapshots: boolean = false) {
   const languageService = ts.createLanguageService(servicesHost, ts.createDocumentRegistry());
 
   // Load and initialize the plugin
-  const pluginModule = require(path.join(__dirname, "dist/index.js"));
+  const pluginModule = require(path.join(__dirname, "..", "dist/index.js"));
 
   // Create mock plugin info similar to what tsserver provides
   const mockLogger: ts.server.Logger = {

@@ -4,8 +4,8 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "test": "npm run build && ts-node test-runner.ts",
-    "test:update": "npm run build && ts-node test-runner.ts --update"
+    "test": "npm run build && ts-node tests/test-runner.ts",
+    "test:update": "npm run build && ts-node tests/test-runner.ts --update"
   },
   "dependencies": {
     "typescript": "^5.3.0"
